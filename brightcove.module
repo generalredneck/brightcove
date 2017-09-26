@@ -155,6 +155,126 @@ function brightcove_menu() {
     'weight' => -1,
   ];
 
+  $items["{$base}/players"] = [
+    'title' => 'Players',
+    'page callback' => 'brightcove_admin_players',
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%"] = [
+    'title' => 'View player',
+    'page callback' => 'brightcove_admin_player_view',
+    'page arguments' => [5, 6],
+    'type' => MENU_CALLBACK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/view"] = [
+    'title' => 'View player',
+    'page callback' => 'brightcove_admin_player_view',
+    'page arguments' => [5, 6],
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+    'weight' => -1,
+  ];
+
+  $items["{$base}/players/%/%/publish"] = [
+    'title' => 'Publish player',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_player_publish_form', 5, 6],
+    'type' => MENU_LOCAL_ACTION,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/add"] = [
+    'title' => 'Add player',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_player_edit_form'],
+    'type' => MENU_LOCAL_ACTION,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/edit"] = [
+    'title' => 'Edit player',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_player_edit_form', 5, 6],
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/delete"] = [
+    'title' => 'Delete player',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_player_delete_form', 5, 6],
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+    'weight' => 1,
+  ];
+
+  $items["{$base}/players/%/%/%"] = [
+    'title' => 'View embed',
+    'page callback' => 'brightcove_admin_embed_view',
+    'page arguments' => [5, 6, 7],
+    'type' => MENU_CALLBACK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/%/view"] = [
+    'title' => 'View embed',
+    'page callback' => 'brightcove_admin_embed_view',
+    'page arguments' => [5, 6, 7],
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+    'weight' => -1,
+  ];
+
+  $items["{$base}/players/%/%/add-embed"] = [
+    'title' => 'Create embed',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_embed_edit_form', 5, 6],
+    'type' => MENU_LOCAL_ACTION,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/%/edit"] = [
+    'title' => 'Edit embed',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_embed_edit_form', 5, 6, 7],
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
+  $items["{$base}/players/%/%/%/delete"] = [
+    'title' => 'Delete embed',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_embed_delete_form', 5, 6, 7],
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+    'weight' => 1,
+  ];
+
+  $items["{$base}/players/%/%/%/publish"] = [
+    'title' => 'Publish',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['brightcove_admin_embed_publish_form', 5, 6, 7],
+    'type' => MENU_LOCAL_ACTION,
+    'access arguments' => ['administer brightcove settings'],
+    'file' => 'brightcove.player.inc',
+  ];
+
   // bc object type, entity type, field name
   $items['brightcove_field/autocomplete/video/%/%/%/%brightcove_client'] = [
     'title' => 'Brightcove field autocomplete',
@@ -2333,6 +2453,14 @@ function brightcove_theme() {
       ],
       'file' => 'theme.inc',
     ],
+    'brightcove_player_preview' => [
+      'variables' => [
+        'preview_url' => NULL,
+        'width' => BRIGHTCOVE_DEFAULT_VIDEO_WIDTH,
+        'height' => BRIGHTCOVE_DEFAULT_VIDEO_HEIGHT,
+      ],
+      'template' => 'brightcove-player-preview',
+    ],
   ];
 }
 
@@ -3146,26 +3274,47 @@ function brightcove_exit($destination = NULL) {
   }
 }
 
+/**
+ * Catches exceptions when interacting with the brightcove wrapper lib.
+ *
+ * This function serves as a bridge between the OO-style wrapper lib and the
+ * procedural Drupal 7 error handling.
+ *
+ * @param callable $try
+ *   A closure that interacts with the wrapper lib.
+ * @param callable|NULL $catch
+ *   A clusure that is called when an error occours. Gets the exception as a
+ *   parameter.
+ * @param string|NULL $logtype
+ *   Log type identifier.
+ *
+ * @return mixed
+ *   The same as what $try returns on success, or what $catch returns on failure.
+ */
 function brightcove_try(callable $try, callable $catch = NULL, $logtype = NULL) {
   brightcove_load_lib();
   try {
     $result = $try();
     return $result;
-  } catch (\Brightcove\API\Exception\APIException $ex) {
+  }
+  catch (\Brightcove\API\Exception\APIException $ex) {
     drupal_set_message(t('Brightcove API call failed: %message', [
       '%message' => _brightcove_try_json_message($ex->getResponseBody()),
     ]), 'error');
     watchdog_exception($logtype ?: 'brightcove_api', $ex);
     if ($catch) {
-      $catch($ex);
+      return $catch($ex);
     }
-  } catch (\Brightcove\API\Exception\AuthenticationException $ex) {
+  }
+  catch (\Brightcove\API\Exception\AuthenticationException $ex) {
     drupal_set_message(t('Failed to authorize with Brightcove'), 'error');
     watchdog_exception($logtype ?: 'brightcove_auth', $ex);
     if ($catch) {
-      $catch($ex);
+      return $catch($ex);
     }
   }
+
+  return NULL;
 }
 
 function brightcove_try_client($account_id, callable $try, callable $catch = NULL, $logtype = NULL) {

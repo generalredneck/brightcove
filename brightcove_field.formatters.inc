@@ -71,6 +71,8 @@ function theme_brightcove_field_formatter_iframe($variables) {
  * @return null|string
  */
 function theme_brightcove_field_image($variables) {
+  global $is_https;
+
   $output = NULL;
   $elements = $variables['elements'];
   $dialog_width = isset($elements['#width']) ? $elements['#width'] : BRIGHTCOVE_DEFAULT_VIDEO_WIDTH;
@@ -116,7 +118,14 @@ function theme_brightcove_field_image($variables) {
         $remote_file = $cache;
       }
       else {
-        $image_src = $images[$image_type]->getSrc();
+        $image = $images[$image_type];
+        $image_src = $image->getSrc();
+        foreach ($image->getSources() as $source) {
+          if ($is_https && strpos($source['src'], 'https://') === 0) {
+            $image_src = $source['src'];
+            break;
+          }
+        }
         $remote_file = brightcove_remote_image($image_src);
         if ($remote_file) {
           brightcove_cache_set($cid, $remote_file);
