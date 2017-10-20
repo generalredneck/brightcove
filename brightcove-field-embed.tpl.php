@@ -8,6 +8,7 @@
  * - $id
  * - $account_id
  * - $player_id
+ * - $data_usage
  * - $video_id
  * - $width
  * - $height
@@ -21,6 +22,7 @@
   data-account="<?php print $account_id; ?>"
   data-player="<?php print $player_id; ?>"
   data-embed="<?php print $embed; ?>"
+  data-usage="<?php print $data_usage; ?>"
   <?php if ($type === BRIGHTCOVE_EMBED_TYPE_VIDEO): ?>
     data-video-id="<?php print $brightcove_id; ?>"
   <?php endif; ?>

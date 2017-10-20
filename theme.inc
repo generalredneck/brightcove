@@ -101,3 +101,12 @@ function theme_brightcove_integration($variables) {
 </div>
 EOS;
 }
+
+/**
+ * Implements template_preprocess_brightcove_field_embed().
+ * 
+ * @param array $variables
+ */
+function brightcove_preprocess_brightcove_field_embed(&$variables) {
+  $variables['data_usage'] = 'cms:drupal:' . VERSION . ':' . system_get_info('module', 'brightcove')['version'] . ':javascript';
+}
