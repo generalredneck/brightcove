@@ -3423,6 +3423,7 @@ function _brightcove_video_form_add_caption_submit($form, &$form_state) {
 function brightcove_embed_iframe_url($account_id, $player_id, $embed, $brightcove_id, $type = BRIGHTCOVE_EMBED_TYPE_VIDEO) {
   $target = $type === BRIGHTCOVE_EMBED_TYPE_PLAYLIST ?
     'playlistId' : 'videoId';
+  $data_usage = "cms:drupal:" . VERSION . ":" . system_get_info('module', 'brightcove')['version'] . ":iframe";
 
-  return "//players.brightcove.net/{$account_id}/{$player_id}_{$embed}/index.html?{$target}={$brightcove_id}";
+  return "//players.brightcove.net/{$account_id}/{$player_id}_{$embed}/index.html?{$target}={$brightcove_id}&data-usage={$data_usage}";
 }
