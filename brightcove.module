@@ -1052,6 +1052,22 @@ function _brightcove_field_rerender_widget(array &$commands, array $form, array 
   $commands[] = ajax_command_replace("#{$wrapper}", $rendered_content);
 }
 
+function ajax_cica($form, $form_state) {
+  $field_rel = $form_state['triggering_element']['#attributes']['rel'];
+  $field_name = $form_state['triggering_element']['#parents'][0];
+
+  $player = $form_state['values']['field_brightcove_video'][LANGUAGE_NONE][0]['player'];
+  $title = t('Ajax CICA test');
+  $id = 'ajax-cica-id';
+  $selector = '<div id="' . $id . '">';
+  $path = url("/admin/config/media/brightcove/players/1/{$player}/add-embed");
+
+  $commands = [];
+  $commands[] = ajax_command_dialog($title, $id, $selector, $path, $field_rel, NULL, TRUE);
+  _brightcove_field_rerender_widget($commands, $form, $form_state);
+  return ['#type' => 'ajax', '#commands' => $commands];
+}
+
 function ajax_browse_video_dialog_callback($form, $form_state) {
   $field_rel = $form_state['triggering_element']['#attributes']['rel'];
   $field_name = $form_state['triggering_element']['#parents'][0];

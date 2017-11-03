@@ -459,7 +459,7 @@ function brightcove_admin_embed_edit_form(array $form, array &$form_state, $bcid
     '#disabled' => !empty($embed_id),
   ];
 
-  $form = _brightcove_admin_player_configuration_form($form, $configuration);
+  $form = _brightcove_admin_player_configuration_form($form, $configuration ?: new \Brightcove\Object\Player\Branch\Configuration\Configuration());
 
   $form['submit'] = [
     '#type' => 'submit',

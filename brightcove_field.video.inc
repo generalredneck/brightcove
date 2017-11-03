@@ -156,6 +156,29 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
       ];
     }
 
+    $element['player_customization'] = [
+      '#type' => 'fieldset',
+      '#title' => t('PLAYER CUSTOMIZATION'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => t('Create a new child player if you would like to apply properties <strong>not</strong> already set in an existing child player.'),
+    ];
+
+    $element['player_customization']['actions']['customize'] = [
+      '#type' => 'button',
+      '#attributes' => [
+        'class' => ['brightcove-field-remove-button'],
+        'rel' => $element['#field_name'] . '-' . $parent_delta . '-' . $delta,
+        'data-entity-type' => $entity_type,
+        'data-field-name' => $element['#field_name'],
+        'data-entity-id' => is_null($eid) ? '0' : $eid,
+      ],
+      '#default_value' => t('Create child player'),
+      '#ajax' => [
+        'callback' => 'ajax_cica',
+      ]
+    ];
+
     $element['actions']['remove'] = [
       '#type' => 'button',
       '#attributes' => [
