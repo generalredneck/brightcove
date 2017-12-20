@@ -147,12 +147,30 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
     // Only show player selection on other entities than 'brightcove_playlist'.
     // A video can have a player but a playlist determines the player for the
     // videos in the list.
+    if (empty($form_state['values']['field_brightcove_video'][LANGUAGE_NONE][$delta]['player'])) {
+      $selected = isset($items[$delta]['player']) ? $items[$delta]['player'] : brightcove_get_default_player($client->bcid);
+    }
+    else {
+      $selected = isset($form_state['values']['field_brightcove_video'][LANGUAGE_NONE][$delta]['player']) ? $form_state['values']['field_brightcove_video'][LANGUAGE_NONE][$delta]['player'] : key($player_list);
+    }
     if ($element['#entity_type'] != 'brightcove_playlist') {
       $element['player'] = [
         '#type' => 'select',
         '#title' => t('Player'),
         '#options' => $player_list,
-        '#default_value' => isset($items[$delta]['player']) ? $items[$delta]['player'] : brightcove_get_default_player($client->bcid),
+        '#default_value' => $selected,
+        '#ajax' => [
+          'callback' => 'ajax_dependent_dropdown',
+          'wrapper' => 'embed-replace-'.$delta,
+        ],
+      ];
+      $element['embed'] = [
+        '#type' => 'select',
+        '#title' => t('Child player'),
+        '#prefix' => '<div id="embed-replace-'.$delta.'">',
+        '#suffix' => '</div>',
+        '#options' => brightcove_embed_list($selected, $client),
+        '#default_value' => isset($items[$delta]['embed']) ? $items[$delta]['embed'] : 'default',
       ];
     }
 
@@ -172,10 +190,13 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
         'data-entity-type' => $entity_type,
         'data-field-name' => $element['#field_name'],
         'data-entity-id' => is_null($eid) ? '0' : $eid,
+        'data-client-id' => $bcid,
       ],
       '#default_value' => t('Create child player'),
+      '#value_callback' => 'brightcove_field_button_value_callback',
+      '#name' => $element['#field_name'] . '-' . $parent_delta . '-' . $delta,
       '#ajax' => [
-        'callback' => 'ajax_cica',
+        'callback' => 'ajax_custom_embed_dialog_callback',
       ]
     ];
 
@@ -277,7 +298,7 @@ function brightcove_field_video_client_ajax_callback($form, $form_state) {
  */
 function _brightcove_field_video_browse($client) {
   global $pager_total, $pager_page_array;
-  $items_per_page = 20;
+  $items_per_page = 21;
   $page = isset($_GET['page']) ? intval($_GET['page']) : '0';
 
   $params = [];

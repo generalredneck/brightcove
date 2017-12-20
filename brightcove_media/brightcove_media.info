@@ -4,7 +4,7 @@ core = 7.x
 package = Brightcove
 php = 5.6
 
-dependencies[] = brightcove (>=7.x-6.x)
+dependencies[] = brightcove
 dependencies[] = media (>=7.x-2.x, <7.x-3.x)
 dependencies[] = media_internet
 dependencies[] = file_entity

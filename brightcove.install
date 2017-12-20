@@ -21,6 +21,11 @@ function brightcove_field_schema() {
         'length' => 255,
         'not null' => FALSE,
       ],
+      'embed' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
       'bcid' => [
         'type' => 'int',
         'not null' => TRUE,

@@ -108,6 +108,5 @@ EOS;
  * @param array $variables
  */
 function brightcove_preprocess_brightcove_field_embed(&$variables) {
-  $variables['embed'] = 'HkVxFudNRb';
   $variables['data_usage'] = 'cms:drupal:' . VERSION . ':' . system_get_info('module', 'brightcove')['version'] . ':javascript';
 }
