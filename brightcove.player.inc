@@ -501,7 +501,7 @@ function brightcove_admin_embed_edit_form(array $form, array &$form_state, $orig
     '#value' => t('Save'),
     // cica-ajax-callback
     '#ajax' => [
-      'callback' => 'ajax_browse_dialog_close_callback',
+      'callback' => 'ajax_custom_embed_dialog_close_callback',
     ],
   ];
 
