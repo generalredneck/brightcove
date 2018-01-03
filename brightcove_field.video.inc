@@ -182,22 +182,10 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
       '#description' => t('Create a new child player if you would like to apply properties <strong>not</strong> already set in an existing child player.'),
     ];
 
-    $element['player_customization']['actions']['customize'] = [
-      '#type' => 'button',
-      '#attributes' => [
-        'class' => ['brightcove-field-remove-button'],
-        'rel' => $element['#field_name'] . '-' . $parent_delta . '-' . $delta,
-        'data-entity-type' => $entity_type,
-        'data-field-name' => $element['#field_name'],
-        'data-entity-id' => is_null($eid) ? '0' : $eid,
-        'data-client-id' => $bcid,
-      ],
-      '#default_value' => t('Create child player'),
-      '#value_callback' => 'brightcove_field_button_value_callback',
-      '#name' => $element['#field_name'] . '-' . $parent_delta . '-' . $delta,
-      '#ajax' => [
-        'callback' => 'ajax_custom_embed_dialog_callback',
-      ]
+    $element['player_customization']['link_to_config'] = [
+      '#markup' => l('Customize player', '/admin/config/media/brightcove/players/' . $bcid . '/' . $selected . '/add-embed', [
+        'query' => drupal_get_destination(),
+      ])
     ];
 
     $element['actions']['remove'] = [

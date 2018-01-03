@@ -256,16 +256,6 @@ function brightcove_menu() {
     'file' => 'brightcove.player.inc',
   ];
 
-  $items["{$base}/players/%/%/ajax-add-embed"] = [
-    'title' => 'Create embed',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => ['brightcove_admin_embed_edit_form', 7, 5, 6],
-    'delivery callback' => 'brightcove_field_deliver_dialog',
-    'type' => MENU_CALLBACK,
-    'access arguments' => ['administer brightcove settings'],
-    'file' => 'brightcove.player.inc',
-  ];
-
   $items["{$base}/players/%/%/%/edit"] = [
     'title' => 'Edit embed',
     'page callback' => 'drupal_get_form',
@@ -284,16 +274,6 @@ function brightcove_menu() {
     'file' => 'brightcove.player.inc',
     'weight' => 1,
   ];
-
-//  cica-publish
-//  $items["{$base}/players/%/%/%/publish"] = [
-//    'title' => 'Publish',
-//    'page callback' => 'drupal_get_form',
-//    'page arguments' => ['brightcove_admin_embed_publish_form', 5, 6, 7],
-//    'type' => MENU_LOCAL_ACTION,
-//    'access arguments' => ['administer brightcove settings'],
-//    'file' => 'brightcove.player.inc',
-//  ];
 
   // bc object type, entity type, field name
   $items['brightcove_field/autocomplete/video/%/%/%/%brightcove_client'] = [
@@ -1075,33 +1055,6 @@ function _brightcove_field_rerender_widget(array &$commands, array $form, array 
 function ajax_dependent_dropdown($form, $form_state) {
   $delta = $form_state['triggering_element']['#parents'][2];
   return $form['field_brightcove_video'][LANGUAGE_NONE][$delta]['embed'];
-}
-
-function ajax_custom_embed_dialog_callback($form, $form_state) {
-  $field_rel = $form_state['triggering_element']['#attributes']['rel'];
-  $delta = substr($field_rel, -1);
-  $bcid = $form_state['triggering_element']['#attributes']['data-client-id'];
-
-  $player = $form_state['values']['field_brightcove_video'][LANGUAGE_NONE][$delta]['player'];
-  $title = t('Create a child player');
-  $id = 'embed-dialog';
-  $selector = '<div id="' . $id . '">';
-  $path = url("/admin/config/media/brightcove/players/{$bcid}/{$player}/ajax-add-embed");
-
-  $commands = [];
-  $commands[] = ajax_command_dialog($title, $id, $selector, $path, $field_rel, NULL, TRUE);
-  _brightcove_field_rerender_widget($commands, $form, $form_state);
-  return ['#type' => 'ajax', '#commands' => $commands];
-}
-
-function ajax_custom_embed_dialog_close_callback($form, $form_state) {
-  $selector = '#embed-dialog';
-  $data = check_plain($form_state['values']['title']) . ' [id:' . check_plain($form_state['values']['id']) . ']';
-  $dialog_type = 'embed';
-
-  $commands = [];
-  $commands[] = ajax_command_close_dialog($selector, $data, NULL, $dialog_type);
-  return ['#type' => 'ajax', '#commands' => $commands];
 }
 
 function ajax_browse_video_dialog_callback($form, $form_state) {

@@ -490,7 +490,7 @@ function brightcove_admin_embed_edit_form(array $form, array &$form_state, $orig
   $form['embed_name'] = [
     '#type' => 'textfield',
     '#title' => t('Name'),
-    '#default_value' => $embed ? $embed->getName() : '',
+    '#default_value' => $embed ? $embed->getBranches()->getMaster()->getConfiguration()->getEmbedName() : '',
     '#required' => TRUE,
   ];
 
@@ -499,10 +499,6 @@ function brightcove_admin_embed_edit_form(array $form, array &$form_state, $orig
   $form['submit'] = [
     '#type' => 'submit',
     '#value' => t('Save'),
-    // cica-ajax-callback
-    '#ajax' => [
-      'callback' => 'ajax_custom_embed_dialog_close_callback',
-    ],
   ];
 
   return $form;
@@ -563,9 +559,6 @@ function brightcove_admin_embed_edit_form_submit(array $form, array &$form_state
     switch ($origin) {
       case 'add-embed':
         $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/view";
-        break;
-      case 'ajax-add-embed':
-        $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/edit";
         break;
       case 'edit':
         $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/preview";
@@ -896,7 +889,6 @@ function _brightcove_admin_apply_on_configuration(array &$form_state, \Brightcov
 
   if (isset($v['embed_name'])) {
     $configuration->setEmbedName($v['embed_name']);
-    //  $configuration->setDescription($v['description']);
   }
 
   $configuration->setAutoadvance(is_numeric($v['autoadvance']) ? $v['autoadvance'] : NULL);
