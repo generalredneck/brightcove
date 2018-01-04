@@ -183,8 +183,10 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
     ];
 
     $element['player_customization']['link_to_config'] = [
+      '#prefix' => '<div id="link-replace-'.$delta.'">',
+      '#suffix' => '</div>',
       '#markup' => l('Customize player', '/admin/config/media/brightcove/players/' . $bcid . '/' . $selected . '/add-embed', [
-        'query' => drupal_get_destination(),
+        'query' => $eid ? ['destination' => "{$entity_type}/{$eid}/edit"] : [],
       ])
     ];
 

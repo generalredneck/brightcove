@@ -1054,7 +1054,10 @@ function _brightcove_field_rerender_widget(array &$commands, array $form, array 
 
 function ajax_dependent_dropdown($form, $form_state) {
   $delta = $form_state['triggering_element']['#parents'][2];
-  return $form['field_brightcove_video'][LANGUAGE_NONE][$delta]['embed'];
+  $commands = [];
+  $commands[] = ajax_command_replace("#embed-replace-" . $delta, drupal_render($form['field_brightcove_video'][LANGUAGE_NONE][$delta]['embed']));
+  $commands[] = ajax_command_replace("#link-replace-" . $delta, drupal_render($form['field_brightcove_video'][LANGUAGE_NONE][$delta]['player_customization']['link_to_config']));
+  return ['#type' => 'ajax', '#commands' => $commands];
 }
 
 function ajax_browse_video_dialog_callback($form, $form_state) {
