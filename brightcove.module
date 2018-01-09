@@ -1052,6 +1052,18 @@ function _brightcove_field_rerender_widget(array &$commands, array $form, array 
   $commands[] = ajax_command_replace("#{$wrapper}", $rendered_content);
 }
 
+/**
+ * Triggered by a change in the 'Player' dropdown list.
+ * Updates the 'Child player' dropdown list, and the 'Create child player' link.
+ *
+ * @param $form
+ *   Parent $form.
+ * @param $form_state
+ *   Parent $form_state
+ *
+ * @return array
+ *   AJAX commands array.
+ */
 function ajax_dependent_dropdown($form, $form_state) {
   $delta = $form_state['triggering_element']['#parents'][2];
   $commands = [];
@@ -2804,6 +2816,16 @@ function brightcove_player_list($client_id = NULL) {
   return $return;
 }
 
+/**
+ * Returns the names of the available embeds for the specified player.
+ *
+ * @param $player
+ *   The player for which embeds should be returned.
+ * @param $client
+ *   Brightcove client entity object.
+ * @return mixed
+ *   Array of embed IDs with names.
+ */
 function brightcove_embed_list($player, $client) {
   list(,,$pm) = brightcove_create_classes($client);
   $embeds = $pm->listEmbeds($player)->getItems();

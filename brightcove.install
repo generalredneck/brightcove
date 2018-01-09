@@ -522,3 +522,31 @@ function brightcove_update_7602() {
     ->condition('name', 'brightcove_field')
     ->execute();
 }
+
+/**
+ * Adds new column field_brightcove_video_embed to the field_data_field_brightcove_video table.
+ */
+function brightcove_update_7603() {
+  if (module_exists('field_sql_storage')) {
+    $coldef = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    );
+
+    foreach (field_info_fields() as $name => $def) {
+      if ($def['type'] == 'brightcove_field' &&
+        $def['storage']['type'] == 'field_sql_storage') {
+        $tablename = _field_sql_storage_tablename($def);
+        $revtablename = _field_sql_storage_revision_tablename($def);
+        $embedcol = _field_sql_storage_columnname($name, 'embed');
+
+        db_add_field($tablename, $embedcol, $coldef);
+        db_add_field($revtablename, $embedcol, $coldef);
+      }
+    }
+
+    db_delete('cache_field')
+      ->execute();
+  }
+}

@@ -176,17 +176,20 @@ function _brightcove_field_video_widget_form(&$form, &$form_state, $field, $inst
 
     $element['player_customization'] = [
       '#type' => 'fieldset',
-      '#title' => t('PLAYER CUSTOMIZATION'),
+      '#title' => t('NEW CHILD PLAYER'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      '#description' => t('Create a new child player if you would like to apply properties <strong>not</strong> already set in an existing child player.'),
+      '#description' => t('See the <a href="https://support.brightcove.com/guide-embed-apis">Embed APIs Guide</a> to decide when child players (Embed APIs) should be used.<br />NOTE: Any unsaved settings on this page will be lost when creating a new child player.'),
     ];
 
     $element['player_customization']['link_to_config'] = [
-      '#prefix' => '<div id="link-replace-'.$delta.'">',
+      '#prefix' => '<div id="link-replace-'.$delta.'"><br />',
       '#suffix' => '</div>',
-      '#markup' => l('Customize player', '/admin/config/media/brightcove/players/' . $bcid . '/' . $selected . '/add-embed', [
+      '#markup' => l('Create child player', '/admin/config/media/brightcove/players/' . $bcid . '/' . $selected . '/add-embed', [
         'query' => $eid ? ['destination' => "{$entity_type}/{$eid}/edit"] : [],
+        'attributes' => [
+          'class' => 'button',
+        ],
       ])
     ];
 

@@ -407,8 +407,20 @@ function brightcove_admin_embed_view($bcid, $player_id, $embed_id) {
   return $build;
 }
 
+/**
+ * Gets the preview embed code and displays the embed preview, and the publish form.
+ * Used to preview the child player before publishing it.
+ *
+ * @param $bcid
+ *   The Client->bcid to use for fetching the preview.
+ * @param $player_id
+ *   The player ID.
+ * @param $embed_id
+ *   The embed ID.
+ *
+ * @return mixed
+ */
 function brightcove_admin_embed_preview($bcid, $player_id, $embed_id) {
-  // Preview the child player before publishing it.
   $client = brightcove_client_load($bcid);
   if (!$client) {
     drupal_not_found();
@@ -558,6 +570,7 @@ function brightcove_admin_embed_edit_form_submit(array $form, array &$form_state
   if ($success) {
     switch ($origin) {
       case 'add-embed':
+        sleep(6); // wait a couple of second for the brightcove server to update, so the user doesn't run into a file not found error.
         $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/view";
         break;
       case 'edit':
