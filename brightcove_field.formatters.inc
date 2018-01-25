@@ -27,6 +27,7 @@ function theme_brightcove_field_formatter_default($variables) {
       'type' => $variables['type'],
       'brightcove_id' => $variables['element']['brightcove_id'],
       'player_id' => $variables['element']['player'] ?: brightcove_get_default_player($client->bcid),
+      'embed' => $variables['element']['embed'] ?: 'default',
       'account_id' => $client->account_id,
       'width' => $variables['width'],
       'height' => $variables['height'],
@@ -52,7 +53,7 @@ function theme_brightcove_field_formatter_iframe($variables) {
       'iframe_url' => brightcove_embed_iframe_url(
         $client->account_id,
         $variables['element']['player'] ?: brightcove_get_default_player($client->bcid),
-        'default',
+        $variables['element']['embed'] ?: 'default',
         $variables['element']['brightcove_id'],
         $variables['type']
       ),

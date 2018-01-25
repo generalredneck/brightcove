@@ -408,6 +408,49 @@ function brightcove_admin_embed_view($bcid, $player_id, $embed_id) {
 }
 
 /**
+ * Gets the preview embed code and displays the embed preview, and the publish form.
+ * Used to preview the child player before publishing it.
+ *
+ * @param $bcid
+ *   The Client->bcid to use for fetching the preview.
+ * @param $player_id
+ *   The player ID.
+ * @param $embed_id
+ *   The embed ID.
+ *
+ * @return mixed
+ */
+function brightcove_admin_embed_preview($bcid, $player_id, $embed_id) {
+  $client = brightcove_client_load($bcid);
+  if (!$client) {
+    drupal_not_found();
+  }
+
+  list(,,$pm) = brightcove_create_classes($client);
+
+  $build = brightcove_try(function() use($player_id, $embed_id, $pm) {
+    $build = [];
+
+    $embed = $pm->getEmbed($player_id, $embed_id);
+
+    $build['widget'] = [
+      '#markup' => $embed->getPreviewEmbedCode(),
+    ];
+
+    return $build;
+  });
+
+  if (!$build) {
+    drupal_not_found();
+  }
+
+  $elements = drupal_get_form('brightcove_admin_embed_publish_form', $bcid, $player_id, $embed_id);
+  $build['widget']['#markup'] .= drupal_render($elements);
+
+  return $build;
+}
+
+/**
  * Form callback for 'admin/config/media/brightcove/players/%/%/{%/edit,add-embed}'.
  *
  * @param array $form
@@ -418,7 +461,7 @@ function brightcove_admin_embed_view($bcid, $player_id, $embed_id) {
  *
  * @return array
  */
-function brightcove_admin_embed_edit_form(array $form, array &$form_state, $bcid, $player_id, $embed_id = NULL) {
+function brightcove_admin_embed_edit_form(array $form, array &$form_state, $origin, $bcid, $player_id, $embed_id = NULL) {
   /** @var \Brightcove\Object\Player\Branch\Configuration\Configuration $configuration */
   $configuration = NULL;
   /** @var \Brightcove\Object\Player\Embed $embed */
@@ -451,15 +494,19 @@ function brightcove_admin_embed_edit_form(array $form, array &$form_state, $bcid
     '#value' => $embed_id,
   ];
 
-  $form['name'] = [
-    '#type' => 'textfield',
-    '#title' => t('Name'),
-    '#default_value' => $embed ? $embed->getName() : '',
-    '#required' => TRUE,
-    '#disabled' => !empty($embed_id),
+  $form['origin'] = [
+    '#type' => 'value',
+    '#value' => $origin,
   ];
 
-  $form = _brightcove_admin_player_configuration_form($form, $configuration);
+  $form['embed_name'] = [
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#default_value' => $embed ? $embed->getBranches()->getMaster()->getConfiguration()->getEmbedName() : '',
+    '#required' => TRUE,
+  ];
+
+  $form = _brightcove_admin_player_configuration_form($form, $configuration ?: new \Brightcove\Object\Player\Branch\Configuration\Configuration());
 
   $form['submit'] = [
     '#type' => 'submit',
@@ -479,7 +526,8 @@ function brightcove_admin_embed_edit_form_submit(array $form, array &$form_state
   $bcid = $form_state['values']['bcid'];
   $player_id = $form_state['values']['player_id'];
   $embed_id = $form_state['values']['embed_id'];
-  $name = $form_state['values']['name'];
+  $name = $form_state['values']['embed_name'];
+  $origin = $form_state['values']['origin'];
 
   /** @var \Brightcove\Object\Player\Branch\Configuration\Configuration $configuration */
   $configuration = NULL;
@@ -503,11 +551,7 @@ function brightcove_admin_embed_edit_form_submit(array $form, array &$form_state
       $pm->updateEmbedConfigurationBranch($player_id, $embed_id, $configuration);
     }
     else {
-      $create_data = new \Brightcove\Object\Player\CreateData();
-      $create_data->setName($name);
-      $create_data->setConfiguration($configuration);
-
-      $result = $pm->createEmbed($player_id, $create_data);
+      $result = $pm->createEmbed($player_id, $configuration);
       $embed_id = $result->getId();
     }
 
@@ -524,7 +568,18 @@ function brightcove_admin_embed_edit_form_submit(array $form, array &$form_state
   });
 
   if ($success) {
-    $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}";
+    switch ($origin) {
+      case 'add-embed':
+        sleep(6); // wait a couple of second for the brightcove server to update, so the user doesn't run into a file not found error.
+        $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/view";
+        break;
+      case 'edit':
+        $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}/preview";
+        break;
+      default:
+        $form_state['redirect'] = "admin/config/media/brightcove/players/{$bcid}/{$player_id}/{$embed_id}";
+        break;
+    }
   }
 }
 
@@ -844,10 +899,18 @@ function _brightcove_admin_player_configuration_form(array $form, \Brightcove\Ob
  */
 function _brightcove_admin_apply_on_configuration(array &$form_state, \Brightcove\Object\Player\Branch\Configuration\Configuration $configuration) {
   $v = &$form_state['values'];
+
+  if (isset($v['embed_name'])) {
+    $configuration->setEmbedName($v['embed_name']);
+  }
+
   $configuration->setAutoadvance(is_numeric($v['autoadvance']) ? $v['autoadvance'] : NULL);
   $configuration->setAutoplay((bool) $v['autoplay']);
   if (!$configuration->getCss()) {
     $configuration->setCss(new \Brightcove\Object\Player\Branch\Configuration\CSS());
+  }
+  else {
+    $configuration->fieldChanged('css');
   }
   $configuration->getCss()->setControlBarColor($v['controlBarColor']);
   $configuration->getCss()->setControlColor($v['controlColor']);
@@ -857,6 +920,9 @@ function _brightcove_admin_apply_on_configuration(array &$form_state, \Brightcov
   $configuration->setLoop((bool) $v['loop']);
   if (!$configuration->getPlayer()) {
     $configuration->setPlayer(new \Brightcove\Object\Player\Branch\Configuration\Player());
+  }
+  else {
+    $configuration->fieldChanged('player');
   }
   $configuration->getPlayer()->setInactive((bool) $v['inactive']);
   $configuration->setPlaylist((bool) $v['playlist']);
