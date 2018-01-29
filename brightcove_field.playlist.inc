@@ -9,6 +9,10 @@
  * Helper function to return the playlist widget form.
  */
 function _brightcove_field_playlist_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, &$element) {
+  $entity_type = $element['#entity_type'];
+  $entity_info = entity_get_info($entity_type);
+  $eid = isset($form['#entity']->{$entity_info['entity keys']['id']}) ? $form['#entity']->{$entity_info['entity keys']['id']} : NULL;
+
   // Select the client.
   $ajax_wrapper_id = "bc-playlist-{$field['field_name']}-{$delta}-ajax-wrapper";
 
@@ -101,7 +105,10 @@ function _brightcove_field_playlist_widget_form(&$form, &$form_state, $field, $i
     $brightcove_id = $form['#node']->{$field['field_name']}[$langcode][$delta]['brightcove_id'];
     // Have to page through the list.
     do {
-      $playlist_options = _brightcove_field_get_playlists($client, $page);
+      $playlist_options = ['0' => [
+        'id' => 'Remove Playlist',
+        'title' => 'Remove Playlist',]
+      ] + _brightcove_field_get_playlists($client, $page);
       $page++;
     }
     while (!in_array($brightcove_id, array_keys($playlist_options)) && !empty($playlist_options));
@@ -109,7 +116,10 @@ function _brightcove_field_playlist_widget_form(&$form, &$form_state, $field, $i
     if (empty($playlist_options)) {
       // Give back the first page if value not found.
       $page = 0;
-      $playlist_options = _brightcove_field_get_playlists($client, $page);
+      $playlist_options = ['0' => [
+        'id' => 'No Playlist selected',
+        'title' => 'No Playlist selected',]
+      ] + _brightcove_field_get_playlists($client, $page);
     }
     else {
       // The be on the current page we have to remove one because the do ... while
@@ -118,18 +128,61 @@ function _brightcove_field_playlist_widget_form(&$form, &$form_state, $field, $i
     }
   }
   else {
-    $playlist_options = _brightcove_field_get_playlists($client, $page);
+    $playlist_options = ['0' => [
+      'id' => 'No Playlist selected',
+      'title' => 'No Playlist selected',]
+    ] + _brightcove_field_get_playlists($client, $page);
   }
 
   $player_list = [];
   brightcove_try(function() use(&$player_list, $client) {
     $player_list = brightcove_player_list($client->bcid);
   });
+
+  if (empty($form_state['values']['field_brightcove_playlist'][LANGUAGE_NONE][$delta]['player'])) {
+    $selected = isset($items[$delta]['player']) ? $items[$delta]['player'] : brightcove_get_default_player($client->bcid);
+  }
+  else {
+    $selected = isset($form_state['values']['field_brightcove_playlist'][LANGUAGE_NONE][$delta]['player']) ? $form_state['values']['field_brightcove_playlist'][LANGUAGE_NONE][$delta]['player'] : key($player_list);
+  }
+
   $element['player'] = [
     '#type' => 'select',
     '#title' => t('Player'),
     '#options' => $player_list,
-    '#default_value' => isset($items[$delta]['player']) ? $items[$delta]['player'] : brightcove_get_default_player($client->bcid),
+    '#default_value' => $selected,
+    '#ajax' => [
+      'callback' => 'ajax_dependent_dropdown',
+      'wrapper' => 'playlist-embed-replace-'.$delta,
+    ],
+  ];
+
+  $element['embed'] = [
+    '#type' => 'select',
+    '#title' => t('Child player'),
+    '#prefix' => '<div id="playlist-embed-replace-'.$delta.'">',
+    '#suffix' => '</div>',
+    '#options' => brightcove_embed_list($selected, $client),
+    '#default_value' => isset($items[$delta]['embed']) ? $items[$delta]['embed'] : 'default',
+  ];
+
+  $element['player_customization'] = [
+    '#type' => 'fieldset',
+    '#title' => t('NEW CHILD PLAYER'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('See the <a href="https://support.brightcove.com/guide-embed-apis">Embed APIs Guide</a> to decide when child players (Embed APIs) should be used.<br />NOTE: Any unsaved settings on this page will be lost when creating a new child player.'),
+  ];
+
+  $element['player_customization']['link_to_config'] = [
+    '#prefix' => '<div id="playlist-link-replace-'.$delta.'"><br />',
+    '#suffix' => '</div>',
+    '#markup' => l('Create child player', '/admin/config/media/brightcove/players/' . $bcid . '/' . $selected . '/add-embed', [
+      'query' => $eid ? ['destination' => "{$entity_type}/{$eid}/edit"] : [],
+      'attributes' => [
+        'class' => 'button',
+      ],
+    ])
   ];
 
   $max_items = variable_get('brightcove_pager_max_items', 20);
