@@ -2334,7 +2334,7 @@ function brightcove_remote_image($url) {
   $parse = parse_url($url);
   $path = pathinfo($parse['path']);
   $thumbnail_directory = 'brightcove_thumbnail';
-  $fullpath = drupal_realpath(file_default_scheme() . '://' . $thumbnail_directory);
+  $fullpath = file_default_scheme() . '://' . $thumbnail_directory;
   $final_file = $fullpath . '/' . $path['basename'];
 
   if (!file_exists($fullpath)) {
@@ -2537,11 +2537,11 @@ function _brightcove_create_client(Entity $client_entity) {
   brightcove_try(function () use ($client_entity, &$cache) {
     $client_id = $client_entity->client_id;
     $client_secret = $client_entity->client_secret;
-    $cache[$client_entity->bcid]['auth_time'] = time();
     $cache[$client_entity->bcid]['client'] = \Brightcove\API\Client::authorize($client_id, $client_secret);
+    $cache[$client_entity->bcid]['auth_time'] = time();
   });
 
-  return isset($cache[$client_entity->bcid]) ? $cache[$client_entity->bcid]['client'] : NULL;
+  return isset($cache[$client_entity->bcid]['client']) ? $cache[$client_entity->bcid]['client'] : NULL;
 }
 
 /**
@@ -2549,17 +2549,20 @@ function _brightcove_create_client(Entity $client_entity) {
  * @return array
  */
 function brightcove_create_classes(Entity $client_entity) {
+  if (variable_get('brightcove_disabled')) {
+    throw new \Brightcove\API\Exception\APIException("Brightcove API has been disabled in system settings");
+  }
   $client = NULL;
   $retry = 5;
-  while ($client === NULL && $retry) {
+  while (!$client && $retry) {
     $client = _brightcove_create_client($client_entity);
     $retry--;
-    if ($client === NULL) {
+    if (!$client) {
       usleep(250000);
     }
   }
 
-  if ($client === NULL) {
+  if (!$client) {
     throw new \Brightcove\API\Exception\AuthenticationException("Failed to authorize with Brightcove.");
   }
 
@@ -3352,7 +3355,7 @@ function brightcove_try(callable $try, callable $catch = NULL, $logtype = NULL) 
   }
   catch (\Brightcove\API\Exception\APIException $ex) {
     drupal_set_message(t('Brightcove API call failed: %message', [
-      '%message' => _brightcove_try_json_message($ex->getResponseBody()),
+      '%message' => _brightcove_try_json_message($ex->getResponseBody()) ?: $ex->getMessage(),
     ]), 'error');
     watchdog_exception($logtype ?: 'brightcove_api', $ex);
     if ($catch) {
