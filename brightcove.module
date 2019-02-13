@@ -2335,7 +2335,8 @@ function brightcove_remote_image($url) {
   $path = pathinfo($parse['path']);
   $thumbnail_directory = 'brightcove_thumbnail';
   $fullpath = file_default_scheme() . '://' . $thumbnail_directory;
-  $final_file = $fullpath . '/' . $path['basename'];
+  $basename = md5_file($url) . ".{$path['basename']}";
+  $final_file = "{$fullpath}/{$basename}";
 
   if (!file_exists($fullpath)) {
     if (!mkdir($fullpath, 0755, TRUE)) {
@@ -2344,7 +2345,7 @@ function brightcove_remote_image($url) {
   }
 
   if (file_exists($final_file)) {
-    return file_build_uri("{$thumbnail_directory}/{$path['basename']}");
+    return file_build_uri("{$thumbnail_directory}/{$basename}");
   }
 
   // Perform basic extension check.
@@ -2362,7 +2363,7 @@ function brightcove_remote_image($url) {
     return FALSE;
   }
 
-  return system_retrieve_file($url, $fullpath, FALSE, FILE_EXISTS_REPLACE);
+  return system_retrieve_file($url, $final_file, FALSE, FILE_EXISTS_REPLACE);
 }
 
 /**
