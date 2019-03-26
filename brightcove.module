@@ -2794,6 +2794,9 @@ function brightcove_player_load_all($client_id = NULL) {
   if ($client_id === NULL) {
     $client_id = variable_get('brightcove_client_default');
   }
+  if (!$client_id) {
+    return [];
+  }
   brightcove_load_lib();
   $cid = "brightcove:players:{$client_id}";
   if (!($players = brightcove_cache_get($cid))) {
