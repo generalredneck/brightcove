@@ -36,6 +36,10 @@ class MediaBrightcoveVideoStreamWrapper extends MediaReadOnlyStreamWrapper {
     return 'brightcove';
   }
 
+  protected function _parse_url($url) {
+    return file_stream_wrapper_uri_normalize($url);
+  }
+
   public function interpolateUrl() {
     $values = $this->brightcoveValues(TRUE);
 
