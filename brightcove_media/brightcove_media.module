@@ -95,6 +95,15 @@ function brightcove_media_file_formatter_info() {
     'mime types' => ['video/brightcove'],
   ];
 
+  $formatters['brightcove_media_video_html_tag'] = [
+    'label' => t('Brightcove Video with Video HTML tag'),
+    'file types' => ['video'],
+    'default settings' => [],
+    'view callback' => 'brightcove_media_file_formatter_video_html_tag_view',
+    'settings callback' => 'brightcove_media_file_formatter_video_settings',
+    'mime types' => ['video/brightcove'],
+  ];
+
   $formatters['brightcove_media_playlist'] = [
     'label' => t('Brightcove Playlist'),
     'file types' => ['video'],
@@ -212,6 +221,48 @@ function brightcove_media_file_formatter_video_view($file, $display, $langcode) 
   }
 
   return NULL;
+}
+
+/**
+ * The brightcove_media_video_file_formatter view callback.
+ */
+function brightcove_media_file_formatter_video_html_tag_view($file, $display, $langcode) {
+   $scheme = file_uri_scheme($file->uri);
+
+  // WYSIWYG does not yet support video inside a running editor instance.
+  if ($scheme === BRIGHTCOVE_EMBED_TYPE_VIDEO && empty($file->override['wysiwyg'])) {
+    $wrapper = _brightcove_media_get_wrapper($file->uri);
+    $result = $wrapper->brightcoveValues(TRUE);
+
+    $element = [
+      '#theme' => 'brightcove_field_embed',
+      '#account_id' => $result['account'],
+      '#player_id' => $result['player'],
+      '#brightcove_id'=> $result['id'],
+        '#attached' => [
+          'js' => [
+            brightcove_get_experiences_js_url() => [
+            'type' => 'external',
+            ],
+          ],
+        ],
+    ];
+
+    // add player override
+    if (isset($display['settings']['player']) && $display['settings']['player']) {
+      $element['#player'] = $display['settings']['player'];
+    }
+    foreach (['width', 'height'] as $setting) {
+      if (isset($display['settings'][$setting]) && $display['settings'][$setting]) {
+        $element['#' . $setting] = $display['settings'][$setting];
+      }
+    }
+
+    return $element;
+  }
+
+  return NULL;
+
 }
 
 /**
