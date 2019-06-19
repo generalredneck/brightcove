@@ -2926,7 +2926,20 @@ function _brightcove_upload_form_callback(&$form, $form_state) {
     'file_validate_extensions' => ['vtt'],
   ];
 
-  $file = file_save_upload('file_upload', $validators, file_default_scheme() . '://');
+  if (!empty($form_state['values']['file_upload'])) {
+    $uploaded_file = reset($form_state['values']['file_upload']);
+    $source = $uploaded_file['tmppath'];
+    $destination = file_stream_wrapper_uri_normalize(file_default_scheme() . '://' .  $uploaded_file['name']);
+    // Rename it to its original name, and put it in its final home.
+    // Note - not using file_move here because if we call file_get_mime
+    // (in file_uri_to_object) while it has a .tmp extension, it horks.
+    $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
+    $file = plupload_file_uri_to_object($destination);
+    file_save($file);
+  }
+  else {
+    $file = file_save_upload('file_upload', $validators, file_default_scheme() . '://');
+  }
 
   if (!$file) {
     drupal_set_message(t('Only Video files are allowed here.'), 'error');

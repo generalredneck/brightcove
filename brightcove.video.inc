@@ -123,7 +123,17 @@ function _brightcove_upload_form(&$form_state, $video_entity, $video_id = NULL) 
 
   if (empty($video_id)) {
     $form['file_upload'] = [
-      '#type' => 'file',
+      '#type' => 'plupload',
+      '#upload_validators' => [
+        'file_validate_extensions' => ['3gp 3g2 aac ac3 asf avchd avi avs bdav dv dxa ea eac3 f4v flac flv h261 h263 h264 m2p m2ts m4a m4v mjpeg mka mks mkv mov mp3 mp4 mpeg mpegts mpg mt2s mts ogg ps qt rtsp thd ts vc1 wav webm wma wmv'],
+      ],
+      '#event_callbacks' => [
+        'FilesAdded' => 'Drupal.brightcove_field.plupload_file_limit',
+      ],
+      '#plupload_settings' => [
+        'multi_selection' => FALSE,
+        'chunk_size' => '50mb',
+      ],
       '#title' => t('Video') . ' <span class="form-required" title="' . t('This field is required.') . '">*</span>',
       '#size' => 40,
     ];
