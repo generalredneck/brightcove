@@ -2146,11 +2146,9 @@ function brightcove_libraries_info() {
       'vendor url' => 'https://github.com/brightcove/PHP-API-Wrapper',
       'download url' => 'https://github.com/brightcove/PHP-API-Wrapper/archive/master.zip',
       'version callback' => '_brightcove_api_version',
-      'files' => [
-        'php' => [
-          'vendor/autoload.php',
-        ],
-      ],
+      'xautoload' => function($adapter) {
+        $adapter->composerJson('composer.json');
+      }
     ],
   ];
 }
@@ -2163,6 +2161,11 @@ function brightcove_libraries_info() {
 function brightcove_load_lib($fail_silently = FALSE) {
   $loaded = &drupal_static(__FUNCTION__);
   if ($loaded) {
+    return;
+  }
+
+  if (class_exists('\Brightcove\API\Client')) {
+    $loaded = TRUE;
     return;
   }
 

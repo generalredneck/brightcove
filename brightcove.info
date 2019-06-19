@@ -11,6 +11,7 @@ dependencies[] = libraries
 dependencies[] = date
 dependencies[] = date_api
 dependencies[] = date_popup
+dependencies[] = xautoload
 
 files[] = brightcove.module
 files[] = brightcove.admin.inc

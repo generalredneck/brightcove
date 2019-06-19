@@ -219,35 +219,66 @@ function brightcove_requirements($phase) {
   $requirements = [];
   $t = get_t();
 
-  if ($phase !== 'install') {
-    $api_wrapper_installed = (($api_wrapper_library = libraries_detect('PHP-API-Wrapper')) && !empty($api_wrapper_library['installed']));
+  // Run the cURL check
+  if (!function_exists('curl_init')) {
+    $requirements['brightcove_curl'] = array(
+      'title' => $t('Brightcove: cURL'),
+      'description' => $t('Brightcove MAPI SDK requires a cURL library. You should install it on your server.'),
+      'severity' => REQUIREMENT_ERROR,
+      'value' => $t('Missing'),
+    );
+  }
+
+  $api_wrapper_present = (($api_wrapper_library = libraries_detect('PHP-API-Wrapper')) && !empty($api_wrapper_library['installed']) && isset($api_wrapper_library['version']));
+
+  // Verify that the library is present; a more detailed analysis will be
+  // performed at runtime.
+  if (!$api_wrapper_present) {
     $requirements['brightcove'] = [
-      'title' => $t('Brightcove API Wrapper'),
-      'value' => isset($api_wrapper_library['version']) ? $t('Installed') : $t('Not installed'),
-      'severity' => $api_wrapper_installed ? REQUIREMENT_OK : REQUIREMENT_ERROR,
-      'description' => $api_wrapper_installed ? $t('The Brightcove PHP Wrapper is installed.') : $t('The Brightcove PHP Wrapper is missing.'),
+      'title' => $t('Brightcove: API wrapper'),
+      'value' => $t('Not downloaded'),
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t('The !library library is missing, it needs to be downloaded and placed in "sites/all/libraries".', array('!library' => l('Brightcove PHP Wrapper', 'https://github.com/brightcove/PHP-API-Wrapper'))),
     ];
   }
 
-  if (!function_exists('curl_init')) {
-    $requirements['curl']['title'] = $t('cURL');
-    $requirements['curl']['description'] = $t('Brightcove MAPI SDK requires a cURL library. You should install it on your server.');
-    $requirements['curl']['severity'] = REQUIREMENT_ERROR;
-    $requirements['curl']['value'] = $t('Missing');
-  }
+  if ($phase === 'runtime' && $api_wrapper_present) {
+    // First verify that the library is present.
+    // If the library is present, can it be loaded correctly?
+    brightcove_load_lib(TRUE);
 
-  if ($phase === 'runtime') {
-    $client_found = FALSE;
-    $client_id = variable_get('brightcove_client_default');
-    if ($client_id) {
-      $client_found = (bool) brightcove_client_load($client_id);
+    // The library does not load, so it is most likely a problem that the
+    // "vendor/autoload.php" file needs to be generated.
+    if (!class_exists('\Brightcove\API\Client')) {
+      $requirements['brightcove'] = [
+        'title' => $t('Brightcove: API wrapper'),
+        'value' => $t('Not installed fully'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t('The Brightcove PHP Wrapper is not loading correctly, the command "composer install --no-dev" needs to be executed from inside the "%path" directory.', array('%path' => $api_wrapper_library['library path'])),
+      ];
     }
 
-    $requirements['brightcove_default_client'] = [
-      'title' => $t('Default brightcove client'),
-      'severity' => $client_found ? REQUIREMENT_OK : REQUIREMENT_ERROR,
-      'value' => $client_found ? $t('Selected') : l($t('Not selected'), 'admin/config/media/brightcove/client'),
-    ];
+    // The library loads correctly is ok.
+    else {
+      $requirements['brightcove'] = [
+        'title' => $t('Brightcove: API wrapper'),
+        'value' => $t('Installed'),
+        'severity' => REQUIREMENT_OK,
+        'description' => $t('The Brightcove PHP Wrapper library is installed and loads correctly.'),
+      ];
+
+      $client_found = FALSE;
+      $client_id = variable_get('brightcove_client_default');
+      if ($client_id) {
+        $client_found = (bool) brightcove_client_load($client_id);
+      }
+
+      $requirements['brightcove_default_client'] = [
+        'title' => $t('Brightcove: default client'),
+        'severity' => $client_found ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+        'value' => $client_found ? $t('Selected') : l($t('Not selected'), 'admin/config/media/brightcove/client'),
+      ];
+    }
   }
 
   return $requirements;
